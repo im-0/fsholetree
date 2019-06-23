@@ -29,8 +29,8 @@ _LOG = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
-def _tmp_dir():
-    tmp_dir = tempfile.mkdtemp(suffix='.fsholetree')
+def _tmp_dir(base_tmp_dir):
+    tmp_dir = tempfile.mkdtemp(suffix='.fsholetree', dir=base_tmp_dir)
     _LOG.debug('Created temp directory \"%s\"', tmp_dir)
     try:
         yield tmp_dir
@@ -40,7 +40,7 @@ def _tmp_dir():
         _LOG.debug('Temp directory \"%s\" removed', tmp_dir)
 
 
-def create(source_dir, destination):
+def create(source_dir, destination, base_tmp_dir, mksquashfs_options):
     if not os.path.isdir(source_dir):
         raise RuntimeError('Source \"{}\" is not a directory'.format(
             source_dir))
@@ -49,7 +49,7 @@ def create(source_dir, destination):
 
     source_dir = os.path.abspath(source_dir)
 
-    with _tmp_dir() as tmp_dir:
+    with _tmp_dir(base_tmp_dir) as tmp_dir:
         tmp_dir = os.path.abspath(tmp_dir)
         if os.path.commonprefix((source_dir, tmp_dir)) == source_dir:
             raise RuntimeError(
@@ -57,4 +57,5 @@ def create(source_dir, destination):
                 .format(tmp_dir, source_dir))
 
         items = crawler.crawl(source_dir)
-        puncher.create_hole_tree_image(items, destination, tmp_dir)
+        puncher.create_hole_tree_image(items, destination, tmp_dir,
+                                       mksquashfs_options)

@@ -181,7 +181,7 @@ def _create_tree(items, fr_save_path, tree_path):
             'fakeroot/create returned error code {}'.format(ret_code))
 
 
-def _squash_tree(fr_save_path, tree_path, destination):
+def _squash_tree(fr_save_path, tree_path, destination, mksquashfs_options):
     cmd = [
         _FAKEROOT,
         '-i',  # load fake environment from file
@@ -191,17 +191,19 @@ def _squash_tree(fr_save_path, tree_path, destination):
         tree_path,
         destination,
     ]
+    cmd.extend(mksquashfs_options)
+
     _LOG.info('Creating SquashFS...')
     _LOG.debug('Executing fakeroot/squash (cmd == %r)...', cmd)
     subprocess.check_call(cmd)
     _LOG.info('Done creating SquashFS: %s', destination)
 
 
-def create_hole_tree_image(items, destination, tmp_dir):
+def create_hole_tree_image(items, destination, tmp_dir, mksquashfs_options):
     fr_save_path = os.path.join(tmp_dir, 's')
     tree_path = os.path.join(tmp_dir, 't')
     _create_tree(items, fr_save_path, tree_path)
-    _squash_tree(fr_save_path, tree_path, destination)
+    _squash_tree(fr_save_path, tree_path, destination, mksquashfs_options)
 
 
 if __name__ == "__main__":
