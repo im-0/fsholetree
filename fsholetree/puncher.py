@@ -92,7 +92,7 @@ def _create_hole(full_path, stat_data, link_path, deferred_dir_times):
     elif stat.S_ISLNK(st_mode):
         os.symlink(link_path, full_path)
     elif stat.S_ISSOCK(st_mode):
-        _mksock(st_mode)
+        _mksock(full_path)
         os.chmod(full_path, stat.S_IMODE(st_mode))
         os.utime(full_path, (st_atime, st_mtime))
     elif stat.S_ISREG(st_mode):

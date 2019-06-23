@@ -1,0 +1,38 @@
+#!/bin/sh
+
+set -xeu
+
+mkdir "/var/tmp/tree"
+mkdir "/var/tmp/tree/sub"
+touch "/var/tmp/tree/file1"
+truncate -s 1234 "/var/tmp/tree/sub/file2"
+touch "/var/tmp/tree/sub/немного_юникода"
+touch "/var/tmp/tree/sub/file4"
+chmod 0400 "/var/tmp/tree/sub/file4"
+ln -s "non/existent/path" "/var/tmp/tree/symlink"
+mkfifo "/var/tmp/tree/sub/fifo"
+sudo mknod "/var/tmp/tree/blockdev" b 1 2
+sudo mknod "/var/tmp/tree/chardev" c 3 4
+
+python2 <<PYCODE
+import socket
+s = socket.socket(socket.AF_UNIX)
+s.bind('/var/tmp/tree/sub/socket')
+PYCODE
+
+python2 -m fsholetree.cli "/var/tmp/tree" "/var/tmp/py2.squashfs"
+python3 -m fsholetree.cli "/var/tmp/tree" "/var/tmp/py3.squashfs"
+
+sudo mkdir "/mnt/py2"
+sudo mount "/var/tmp/py2.squashfs" "/mnt/py2"
+sudo mkdir "/mnt/py3"
+sudo mount "/var/tmp/py3.squashfs" "/mnt/py3"
+
+( cd "/var/tmp/tree" && find "." ) | sort >"/var/tmp/orig.list"
+( cd "/mnt/py2" && find "." ) | sort >"/var/tmp/py2.list"
+( cd "/mnt/py3" && find "." ) | sort >"/var/tmp/py3.list"
+
+cmp "/var/tmp/orig.list" "/var/tmp/py2.list"
+cmp "/var/tmp/orig.list" "/var/tmp/py3.list"
+
+echo "Success!"

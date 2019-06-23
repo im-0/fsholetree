@@ -8,12 +8,9 @@ sudo: required
 
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get -qq install -y python2.7 python3 pylint pylint3 fakeroot squashfs-tools file
+  - sudo apt-get -qq install -y python2.7 python3 pylint pylint3 fakeroot squashfs-tools
 
 script:
   - ./travis-pylint-helper pylint
   - ./travis-pylint-helper pylint3
-  - python2 -m fsholetree.cli . /var/tmp/test1.squashfs
-  - file /var/tmp/test1.squashfs
-  - python3 -m fsholetree.cli . /var/tmp/test2.squashfs
-  - file /var/tmp/test2.squashfs
+  - ./travis-test-helper
