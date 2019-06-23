@@ -1,13 +1,10 @@
-import contextlib
 import logging
 import marshal
 import os
-import shutil
 import socket
 import stat
 import subprocess
 import sys
-import tempfile
 
 
 _FAKEROOT = 'fakeroot'
@@ -167,18 +164,6 @@ def _create_tree(items, fr_save_path, tree_path):
             'fakeroot/create returned error code {}'.format(ret_code))
 
 
-@contextlib.contextmanager
-def _tmp_dir():
-    tmp_dir = tempfile.mkdtemp(suffix='.fsholetree')
-    _LOG.debug('Created temp directory \"%s\"', tmp_dir)
-    try:
-        yield tmp_dir
-    finally:
-        _LOG.debug('Removing temp directory \"%s\"...', tmp_dir)
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-        _LOG.debug('Temp directory \"%s\" removed', tmp_dir)
-
-
 def _squash_tree(fr_save_path, tree_path, destination):
     cmd = [
         _FAKEROOT,
@@ -195,12 +180,11 @@ def _squash_tree(fr_save_path, tree_path, destination):
     _LOG.info('Done creating SquashFS: %s', destination)
 
 
-def create_hole_tree_image(items, destination):
-    with _tmp_dir() as tmp_dir:
-        fr_save_path = os.path.join(tmp_dir, 's')
-        tree_path = os.path.join(tmp_dir, 't')
-        _create_tree(items, fr_save_path, tree_path)
-        _squash_tree(fr_save_path, tree_path, destination)
+def create_hole_tree_image(items, destination, tmp_dir):
+    fr_save_path = os.path.join(tmp_dir, 's')
+    tree_path = os.path.join(tmp_dir, 't')
+    _create_tree(items, fr_save_path, tree_path)
+    _squash_tree(fr_save_path, tree_path, destination)
 
 
 if __name__ == "__main__":

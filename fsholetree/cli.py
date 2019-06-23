@@ -1,8 +1,7 @@
 import logging
 import sys
 
-import fsholetree.crawler as crawler
-import fsholetree.puncher as puncher
+import fsholetree.holetree as holetree
 
 
 _LOG = logging.getLogger()
@@ -23,7 +22,7 @@ def main():
     _setup_logging()
     _LOG.info('Started')
 
-    puncher.create_hole_tree_image(crawler.crawl(sys.argv[1]), sys.argv[2])
+    holetree.create(sys.argv[1], sys.argv[2])
 
     _LOG.info('Done!')
 

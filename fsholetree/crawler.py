@@ -16,9 +16,6 @@ def _walk(base_path):
 
 
 def crawl(base_path):
-    # TODO: Do not descend into directory where child process generates tree.
-    base_path = os.path.abspath(base_path)
-
     yield os.path.curdir, os.lstat(base_path)
     names_n = 1
 
