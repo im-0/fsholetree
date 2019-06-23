@@ -17,7 +17,7 @@ without keeping actual contents of files and with mountable SquashFS
 image as a result.
 
 Written in Python, supports both Python 2 & 3. No dependencies except of
-Python itself.
+Python itself and two command line tools: `fakeroot` and `mksquashfs`.
 
 ## Installation and usage
 
