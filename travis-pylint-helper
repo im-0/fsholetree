@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set -x
+
+"${1}" fsholetree
+ret_code=$?
+
+set -eu
+
+if [ \( $ret_code -eq 0 \) -o \( $ret_code -eq 16 \) ]; then
+	# No errors or "conventional message" => good.
+	exit 0
+else
+	# Other problems => bad.
+	exit 1
+fi
