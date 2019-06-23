@@ -18,6 +18,7 @@
 import itertools
 import logging
 import os
+import stat
 
 
 _LOG = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ def _walk(base_path):
 
 
 def crawl(base_path):
-    yield os.path.curdir, os.lstat(base_path)
+    yield os.path.curdir, os.lstat(base_path), None
     names_n = 1
 
     for cur_path, dir_names, file_names in _walk(base_path):
@@ -46,7 +47,11 @@ def crawl(base_path):
             rel_path = os.path.join(rel_cur_path, basename)
             full_path = os.path.join(cur_path, basename)
 
-            yield rel_path, os.lstat(full_path)
+            stat_data = os.lstat(full_path)
+            link_path = os.readlink(full_path) \
+                if stat.S_ISLNK(stat_data.st_mode) \
+                else None
+            yield rel_path, stat_data, link_path
 
             names_n += 1
 

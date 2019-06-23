@@ -61,10 +61,10 @@ def _simplify_item(item):
         item[1].st_size,
         item[1].st_atime,
         item[1].st_mtime,
-    )
+    ), item[2]
 
 
-def _create_hole(full_path, stat_data, deferred_dir_times):
+def _create_hole(full_path, stat_data, link_path, deferred_dir_times):
     # Should be in sync with _simplify_item().
     (
         st_mode,
@@ -90,8 +90,7 @@ def _create_hole(full_path, stat_data, deferred_dir_times):
         os.mknod(full_path, st_mode, st_rdev)
         os.utime(full_path, (st_atime, st_mtime))
     elif stat.S_ISLNK(st_mode):
-        # TODO: Implement.
-        pass
+        os.symlink(link_path, full_path)
     elif stat.S_ISSOCK(st_mode):
         _mksock(st_mode)
         os.chmod(full_path, stat.S_IMODE(st_mode))
@@ -121,10 +120,11 @@ def _create_tree_process_inner(tree_path):
         if item is None:
             break
 
-        path, stat_data = item
+        path, stat_data, link_path = item
         _create_hole(
             os.path.abspath(os.path.join(tree_path, path)),
             stat_data,
+            link_path,
             deferred_dir_times)
 
     _set_dir_times(deferred_dir_times)
