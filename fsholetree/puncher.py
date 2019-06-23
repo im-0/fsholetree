@@ -15,6 +15,7 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
+import errno
 import logging
 import marshal
 import os
@@ -24,7 +25,12 @@ import subprocess
 import sys
 
 
-_FAKEROOT = 'fakeroot'
+_FAKEROOT = (
+    'fakeroot-sysv',  # sysv mode is much faster than tcp
+    'fakeroot',
+    'fakeroot-tcp',
+)
+
 _MKSQUASH = 'mksquashfs'
 _SELF = 'fsholetree.puncher'
 
@@ -33,11 +39,17 @@ _LOG = logging.getLogger(__name__)
 
 
 if sys.version_info[0] == 2:
+    import exceptions
+
+    _OSError = exceptions.OSError  # pylint: disable=all
+
     def _load_from_stdin(stdin):
         return marshal.load(stdin)
 else:
     def _load_from_stdin(stdin):
         return marshal.load(stdin.buffer)
+
+    _OSError = OSError  # pylint: disable=all
 
 
 def _touch(full_path, size):
@@ -135,9 +147,9 @@ def _create_tree_process():
     _create_tree_process_inner(**conf)
 
 
-def _create_tree(items, fr_save_path, tree_path):
+def _create_tree(items, fr_bin, fr_save_path, tree_path):
     cmd = [
-        _FAKEROOT,
+        fr_bin,
         '-s',  # save fake environment into file
         fr_save_path,
         '--',
@@ -181,9 +193,10 @@ def _create_tree(items, fr_save_path, tree_path):
             'fakeroot/create returned error code {}'.format(ret_code))
 
 
-def _squash_tree(fr_save_path, tree_path, destination, mksquashfs_options):
+def _squash_tree(fr_bin, fr_save_path, tree_path, destination,
+                 mksquashfs_options):
     cmd = [
-        _FAKEROOT,
+        fr_bin,
         '-i',  # load fake environment from file
         fr_save_path,
         '--',
@@ -199,11 +212,27 @@ def _squash_tree(fr_save_path, tree_path, destination, mksquashfs_options):
     _LOG.info('Done creating SquashFS: %s', destination)
 
 
+def _find_fakeroot():
+    for fr_bin in _FAKEROOT:
+        try:
+            ret_code = subprocess.call([fr_bin, '-v'])
+        except _OSError as exc:
+            if exc.errno == errno.ENOENT:
+                continue
+            else:
+                raise
+        if ret_code == 0:
+            return fr_bin
+    raise RuntimeError('Unable to find usable fakeroot')
+
+
 def create_hole_tree_image(items, destination, tmp_dir, mksquashfs_options):
+    fr_bin = _find_fakeroot()
     fr_save_path = os.path.join(tmp_dir, 's')
     tree_path = os.path.join(tmp_dir, 't')
-    _create_tree(items, fr_save_path, tree_path)
-    _squash_tree(fr_save_path, tree_path, destination, mksquashfs_options)
+    _create_tree(items, fr_bin, fr_save_path, tree_path)
+    _squash_tree(fr_bin, fr_save_path, tree_path, destination,
+                 mksquashfs_options)
 
 
 if __name__ == "__main__":
