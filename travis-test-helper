@@ -13,6 +13,8 @@ ln -s "non/existent/path" "/var/tmp/tree/symlink"
 mkfifo "/var/tmp/tree/sub/fifo"
 sudo mknod "/var/tmp/tree/blockdev" b 1 2
 sudo mknod "/var/tmp/tree/chardev" c 3 4
+mkdir "/var/tmp/tree/ещё_юникод"
+echo "not sparse" >"/var/tmp/tree/ещё_юникод/какой_то_файл"
 
 python2 <<PYCODE
 import socket
@@ -28,11 +30,23 @@ sudo mount "/var/tmp/py2.squashfs" "/mnt/py2"
 sudo mkdir "/mnt/py3"
 sudo mount "/var/tmp/py3.squashfs" "/mnt/py3"
 
-( cd "/var/tmp/tree" && find "." ) | sort >"/var/tmp/orig.list"
-( cd "/mnt/py2" && find "." ) | sort >"/var/tmp/py2.list"
-( cd "/mnt/py3" && find "." ) | sort >"/var/tmp/py3.list"
+call_find() (
+	set -xeu
+	cd "${1}"
+	find "." -type d -printf "%p %U:%G %y\n" | sort
+	find "." ! -type d -printf "%p %s %U:%G %y\n" | sort
+)
+
+call_find "/var/tmp/tree" >"/var/tmp/orig.list"
+call_find "/mnt/py2" >"/var/tmp/py2.list"
+call_find "/mnt/py3" >"/var/tmp/py3.list"
 
 cmp "/var/tmp/orig.list" "/var/tmp/py2.list"
 cmp "/var/tmp/orig.list" "/var/tmp/py3.list"
+
+# Cleanup.
+sudo umount "/mnt/py2"
+sudo umount "/mnt/py3"
+sudo rm -fr "/var/tmp/tree" "/var/tmp/py2.squashfs" "/var/tmp/py3.squashfs" "/mnt/py2" "/mnt/py3" "/var/tmp/orig.list" "/var/tmp/py2.list" "/var/tmp/py3.list"
 
 echo "Success!"
